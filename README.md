@@ -3,15 +3,18 @@
 1.
 cd frontend 
 2.
+npm install
+3.
 npm run dev
 
 
 # stockbackend
 1.
- cd stockbackend
-
+cd stockbackend
 2.
-py manage.py runserver
+pip install -r requirements.txt
+3.
+python manage.py runserver
  
 
 
