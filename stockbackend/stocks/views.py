@@ -12,7 +12,7 @@ from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-'''
+
 @api_view(['GET'])
 def stock_chart(request):
     symbol = request.GET.get('symbol', '')
@@ -31,9 +31,6 @@ def stock_chart(request):
         return Response(data)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
-
-
-'''
 import os
 from django.conf import settings
 
@@ -55,6 +52,8 @@ def search_companies(request):
     except FileNotFoundError:
         return JsonResponse({"error": "CSV file not found."}, status=500)
 
+import requests
+from django.http import JsonResponse
 
 def get_chart_data(request):
     symbol = request.GET.get('symbol', '').strip().upper()
@@ -63,42 +62,55 @@ def get_chart_data(request):
     if not symbol:
         return JsonResponse({'error': 'Missing symbol parameter'}, status=400)
 
-    # Auto append .NS if not provided
-    if '.' not in symbol:
-        symbol += '.NS'
+    # 🔥 PUT YOUR API KEY HERE DIRECTLY
+    API_KEY = "CDM6GB2YTHCW2JLD"
 
-    range_map = {
-        '1D': ('1d', '15m'),
-        '5D': ('5d', '1h'),
-        '1M': ('1mo', '1d'),
-        '6M': ('6mo', '1wk'),
-        '1Y': ('1y', '1wk'),
-        'MAX': ('max', '1mo'),
+    # Alpha Vantage function mapping
+    function_map = {
+        "1D": "TIME_SERIES_INTRADAY",
+        "5D": "TIME_SERIES_INTRADAY",
+        "1M": "TIME_SERIES_DAILY",
+        "6M": "TIME_SERIES_WEEKLY",
+        "1Y": "TIME_SERIES_WEEKLY",
+        "MAX": "TIME_SERIES_MONTHLY"
     }
 
-    if range_param not in range_map:
-        return JsonResponse({'error': 'Invalid range parameter'}, status=400)
+    function = function_map.get(range_param, "TIME_SERIES_DAILY")
 
-    period, interval = range_map[range_param]
+    # NSE stocks → use .BSE or .NS format
+    full_symbol = symbol + ".BSE"
+
+    url = (
+        f"https://www.alphavantage.co/query?"
+        f"function={function}&symbol={full_symbol}&apikey={API_KEY}&interval=15min"
+    )
 
     try:
-        ticker = yf.Ticker(symbol)
-        df = ticker.history(period=period, interval=interval)
+        response = requests.get(url)
+        data = response.json()
 
-        if df.empty:
-            return JsonResponse({'error': 'Invalid symbol or no data available'}, status=404)
+        # Find correct time series key
+        time_series_key = next(
+            (key for key in data if "Time Series" in key),
+            None
+        )
 
-        df = df.reset_index()
+        if not time_series_key:
+            return JsonResponse({"error": "No data returned from Alpha Vantage"}, status=404)
 
-        data = [
+        series = data[time_series_key]
+
+        chart_data = [
             {
-                'time': row['Datetime' if 'Datetime' in row else 'Date'].astimezone(pytz.UTC).isoformat(),
-                'price': float(row['Close']) if not str(row['Close']).lower() == 'nan' else None
+                "time": time,
+                "price": float(values["4. close"])
             }
-            for _, row in df.iterrows()
+            for time, values in series.items()
         ]
 
-        return JsonResponse(data, safe=False)
+        chart_data.reverse()
+
+        return JsonResponse(chart_data, safe=False)
 
     except Exception as e:
-        return JsonResponse({'error': 'Failed to fetch stock data', 'details': str(e)}, status=500)
+        return JsonResponse({"error": str(e)}, status=500)
