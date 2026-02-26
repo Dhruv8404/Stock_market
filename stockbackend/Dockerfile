@@ -25,5 +25,11 @@ COPY . .
 # Expose port 8000
 EXPOSE 8000
 
-# Run migrations and start the server
-CMD ["python", "manage.py", "migrate", "&&", "gunicorn", "--bind", "0.0.0.0:8000", "stockbackend.wsgi:application"]
+# Copy startup script
+COPY start.sh .
+
+# Make it executable
+RUN chmod +x start.sh
+
+# Run the startup script
+CMD ["./start.sh"]
