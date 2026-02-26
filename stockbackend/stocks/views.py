@@ -51,7 +51,6 @@ def search_companies(request):
             return JsonResponse(results, safe=False)
     except FileNotFoundError:
         return JsonResponse({"error": "CSV file not found."}, status=500)
-
 import requests
 from django.http import JsonResponse
 
@@ -62,52 +61,42 @@ def get_chart_data(request):
     if not symbol:
         return JsonResponse({'error': 'Missing symbol parameter'}, status=400)
 
-    API_KEY = "CDM6GB2YTHCW2JLD"
+    API_KEY = "38b3c848266e4bb09ce162ee505aeb28"
 
-    function_map = {
-        "1D": "TIME_SERIES_INTRADAY",
-        "5D": "TIME_SERIES_INTRADAY",
-        "1M": "TIME_SERIES_DAILY",
-        "6M": "TIME_SERIES_WEEKLY",
-        "1Y": "TIME_SERIES_WEEKLY",
-        "MAX": "TIME_SERIES_MONTHLY"
+    # Map range to interval
+    interval_map = {
+        "1D": "5min",
+        "5D": "15min",
+        "1M": "1day",
+        "6M": "1week",
+        "1Y": "1week",
+        "MAX": "1month"
     }
 
-    function = function_map.get(range_param, "TIME_SERIES_DAILY")
+    interval = interval_map.get(range_param, "1day")
 
-    full_symbol = symbol + ".NSE"   # ✅ FIXED HERE
+    # NSE symbol format
+    full_symbol = f"{symbol}:NSE"
 
     url = (
-        f"https://www.alphavantage.co/query?"
-        f"function={function}&symbol={full_symbol}&apikey={API_KEY}&interval=15min"
+        f"https://api.twelvedata.com/time_series?"
+        f"symbol={full_symbol}&interval={interval}&apikey={API_KEY}"
     )
 
     try:
         response = requests.get(url)
         data = response.json()
 
-        # Debug print (optional)
-        print(data)
-
-        time_series_key = next(
-            (key for key in data if "Time Series" in key),
-            None
-        )
-
-        if not time_series_key:
-            return JsonResponse({"error": "No data returned from Alpha Vantage", "details": data}, status=404)
-
-        series = data[time_series_key]
+        if "values" not in data:
+            return JsonResponse({"error": "No data returned", "details": data}, status=404)
 
         chart_data = [
             {
-                "time": time,
-                "price": float(values["4. close"])
+                "time": item["datetime"],
+                "price": float(item["close"])
             }
-            for time, values in series.items()
+            for item in reversed(data["values"])
         ]
-
-        chart_data.reverse()
 
         return JsonResponse(chart_data, safe=False)
 
