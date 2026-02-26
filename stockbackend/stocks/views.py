@@ -62,10 +62,8 @@ def get_chart_data(request):
     if not symbol:
         return JsonResponse({'error': 'Missing symbol parameter'}, status=400)
 
-    # 🔥 PUT YOUR API KEY HERE DIRECTLY
     API_KEY = "CDM6GB2YTHCW2JLD"
 
-    # Alpha Vantage function mapping
     function_map = {
         "1D": "TIME_SERIES_INTRADAY",
         "5D": "TIME_SERIES_INTRADAY",
@@ -77,8 +75,7 @@ def get_chart_data(request):
 
     function = function_map.get(range_param, "TIME_SERIES_DAILY")
 
-    # NSE stocks → use .BSE or .NS format
-    full_symbol = symbol + ".BSE"
+    full_symbol = symbol + ".NSE"   # ✅ FIXED HERE
 
     url = (
         f"https://www.alphavantage.co/query?"
@@ -89,14 +86,16 @@ def get_chart_data(request):
         response = requests.get(url)
         data = response.json()
 
-        # Find correct time series key
+        # Debug print (optional)
+        print(data)
+
         time_series_key = next(
             (key for key in data if "Time Series" in key),
             None
         )
 
         if not time_series_key:
-            return JsonResponse({"error": "No data returned from Alpha Vantage"}, status=404)
+            return JsonResponse({"error": "No data returned from Alpha Vantage", "details": data}, status=404)
 
         series = data[time_series_key]
 
