@@ -12,7 +12,7 @@ from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-
+'''
 @api_view(['GET'])
 def stock_chart(request):
     symbol = request.GET.get('symbol', '')
@@ -31,6 +31,9 @@ def stock_chart(request):
         return Response(data)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+
+'''
 import os
 from django.conf import settings
 
