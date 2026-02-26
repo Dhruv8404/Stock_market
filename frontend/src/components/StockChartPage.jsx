@@ -52,12 +52,15 @@ const StockChartPage = () => {
   const { change, changePercent } = calculateChange(chartData);
   const isPositive = change >= 0;
 
+  // Get API URL from environment variable or use default
+  const API_URL = import.meta.env.VITE_API_URL || 'https://stock-market-ju6c.onrender.com';
+
   // Fetch chart data based on selected symbol
   const fetchChartData = async () => {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:8000/api/stock_chart/?symbol=${symbol}&range=${range}`
+        `${API_URL}/api/stock_chart/?symbol=${symbol}&range=${range}`
       );
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -90,7 +93,7 @@ const StockChartPage = () => {
 
     if (input.length >= 2) {
       try {
-        const res = await fetch(`http://localhost:8000/api/search/?q=${input}`);
+        const res = await fetch(`${API_URL}/api/search/?q=${input}`);
         const data = await res.json();
         setSuggestions(data);
       } catch (err) {

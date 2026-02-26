@@ -17,7 +17,10 @@ SECRET_KEY = 'django-insecure-glfa*l)5m^j2w$$%5bdq$rqk9-zh6yhw(l^)19n14pcz86*d2_
 DEBUG = False
 
 ALLOWED_HOSTS = [
-    "stock-market-d4vu.onrender.com",
+    "stock-market-ju6c.onrender.com",
+    "stock-market-black-six.vercel.app",
+    "localhost",
+    "127.0.0.1",
 ]
 
 
@@ -62,7 +65,12 @@ MIDDLEWARE = [
 # --------------------------------------------------
 CORS_ALLOWED_ORIGINS = [
     "https://stock-market-black-six.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
 ]
+
+# Also allow the Render backend URL
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 
